@@ -32,7 +32,7 @@ include_directories(include ${GLM_INCLUDE_DIRS})
 # add_executable(${PROJECT_NAME} ${SOURCES})
 add_executable(render_circle
     src/circle.cpp
-    main/circle_main.cpp)
+    main/circle_render_main.cpp)
 
 add_executable(render_checker_board
     src/checker_board.cpp
@@ -42,8 +42,18 @@ add_executable(render_radial_checker_board
     src/radial_checker_board.cpp
     main/radial_checker_board_main.cpp)
 
-add_executable(image_renderer
-    src/image_render.cpp
-    main/image_render_main.cpp)
+add_executable(sphere_renderer
+    src/camera_matrix.cpp
+    main/sphere_render_main.cpp)
 
-target_link_libraries(image_renderer PRIVATE glm::glm)
+add_executable(test_render
+    main/image_render_main.cpp
+    src/camera_matrix.cpp)
+
+add_executable(cone_render
+    main/cone_render_main.cpp
+    src/camera_matrix.cpp)
+
+target_link_libraries(sphere_renderer PRIVATE glm::glm)
+target_link_libraries(test_render PRIVATE glm::glm)
+target_link_libraries(cone_render PRIVATE glm::glm)

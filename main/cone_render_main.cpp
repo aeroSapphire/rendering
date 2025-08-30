@@ -7,30 +7,23 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
-template <typename T, glm::precision P, glm::length_t C, glm::length_t R>
-std::ostream &operator<<(std::ostream &os, const glm::mat<C, R, T, P> &matrix) {
-  for (glm::length_t row = 0; row < R; ++row) {
-    os << "[ ";
-    for (glm::length_t col = 0; col < C; ++col) {
-      os << matrix[col][row] << " ";  // GLM is column-major
-    }
-    os << "]\n";
-  }
-  return os;
-}
-
 glm::mat3 ComputeCameraMatrix(const float verticalFOVDegrees,
                               const float imageWidth, const float imageHeight);
 
-bool IntersectRayCone(glm::vec3 rayOrigin, glm::vec3 rayDirection, glm::vec3 sphereCenter, float sphereRadius, float &t){
-
-	glm::vec3 L = rayOrigin - sphereCenter;
-
+bool intersectRayCone(glm::vec3 rayOrigin, glm::vec3 rayDirection, glm::vec3 coneVertex, glm::vec3 coneAxis, float coneAngle, float &t){
+	glm::vec3 L = rayOrigin - coneVertex;
 	rayDirection = glm::normalize(rayDirection);
 
-	float a = glm::dot(rayDirection, rayDirection);
-	float b = 2.0f * glm::dot(rayDirection, L);
-	float c = glm::dot(L, L) - (sphereRadius * sphereRadius);
+	float theta = glm::radians(coneAngle);
+	float DV = glm::dot(rayDirection, coneAxis);
+	float LV = glm::dot(L, coneAxis);
+	float DL = glm::dot(rayDirection, L);
+	float LL = glm::dot(L, L);
+	float cos2 = (glm::cos(theta)*glm::cos(theta));
+	
+	float a = DV * DV - cos2;
+	float b = 2 * ((DV * LV) - DL * cos2);
+	float c = (LV * LV) - (LL * cos2);
 
 	// Calculate Determinant
 	float delta = (b*b) - 4*a*c;
@@ -54,43 +47,51 @@ bool IntersectRayCone(glm::vec3 rayOrigin, glm::vec3 rayDirection, glm::vec3 sph
 		return true;
 	}
 
-	
 }
-int main() {
-	// Create Image
+
+int main(){
+
+	constexpr int comp =1;
 	constexpr int WIDTH = 1280;
 	constexpr int HEIGHT = 720;
-	constexpr float radius = 4.0;
-	constexpr int comp = 1;
 
-	glm::vec3 ray_origin(0, 0, 0);
-	glm::vec3 obj_origin(0, 0, -10);
+	glm::vec3 rayOrigin(0,0,0);
+	glm::vec3 coneOrigin(0,0,-10);
+	glm::vec3 coneAxis(0,-1,0);
+	float coneAngle = 20.0f;
+
+	std::vector<unsigned char> image(WIDTH*HEIGHT, 0x00);
 	glm::mat3 KK = ComputeCameraMatrix(60, WIDTH, HEIGHT);
-	std::vector<unsigned char> image(WIDTH * HEIGHT, 0x00);
 
 	for (int i = 0; i < WIDTH * HEIGHT; ++i) {
 	int py = i / WIDTH;
 	int px = i % WIDTH;
 	glm::vec3 pixel_h(px, py, 1.0);
-	glm::vec3 ray_direction = -glm::normalize(glm::inverse(KK) * pixel_h);
+	glm::vec3 rayDirection = -glm::normalize(glm::inverse(KK) * pixel_h);
 	float t;
 	bool is_intersecting =
-		IntersectRayCone(ray_origin, ray_direction, obj_origin, radius, t);
+		intersectRayCone(rayOrigin, rayDirection, coneOrigin, glm::normalize(coneAxis), coneAngle, t);
 
 	if (is_intersecting) {
-	glm::vec3 intersection_point = ray_origin + ray_direction * t;
-	glm::vec3 normal = glm::normalize(intersection_point - obj_origin);
-	float color_vector = glm::dot(-ray_direction, normal);
+
+	glm::vec3 intersection_point = rayOrigin + rayDirection * t;
+
+		// if (glm::dot(intersection_point-coneOrigin,coneAxis) > 0){
+	glm::vec3 normal = glm::normalize(intersection_point - coneOrigin);
+	float color_vector = glm::dot(-rayDirection, normal);
 	image[i] = 255 * color_vector;
-	}
+			// }	
+		}
 	// else{
 	// 	std::cout << "No intersection" << std::endl;
 	// }
-	// std::cout << glm::to_string(ray_direction) << std::endl;
+	// std::cout << glm::to_string(rayDirection) << std::endl;
   
 
 	}
 	stbi_write_png("output_test.png", WIDTH, HEIGHT, comp, image.data(), WIDTH * 1);
+	return 0;
+
 	return 0;
 
 }
