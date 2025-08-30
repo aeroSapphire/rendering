@@ -58,7 +58,8 @@ int main() {
   glm::vec3 rayOrigin(0, 0, 0);
   glm::vec3 coneOrigin(0, 0, -10);
   glm::vec3 coneAxis(0, -1, 0);
-  float coneAngle = 20.0f;
+  float coneAngle = 45.0f;
+  float halfConeAngle = 0.5 * coneAngle;
 
   std::vector<unsigned char> image(WIDTH * HEIGHT, 0x00);
   glm::mat3 KK = ComputeCameraMatrix(60, WIDTH, HEIGHT);
@@ -74,11 +75,32 @@ int main() {
                          glm::normalize(coneAxis), coneAngle, t);
 
     if (is_intersecting) {
-      glm::vec3 intersection_point = rayOrigin + rayDirection * t;
+      glm::vec3 P = rayOrigin + t * rayDirection;
+      glm::vec3 X = P - coneOrigin;
+
+      // assuming coneAxis is normalized
+      float cosTheta = cos(glm::radians(coneAngle));
+      float cos2 = cosTheta * cosTheta;
+
+      float k = glm::dot(X, coneAxis);
+
+      glm::vec3 grad = 2.0f * (k * coneAxis - X * cos2);
+
+      // outward normal (normalize)
+      glm::vec3 normal = glm::normalize(grad);
+
+      // glm::vec3 intersection_point = rayOrigin + rayDirection * t;
+      // glm::vec3 intersectionInObjectFrame = intersection_point - coneOrigin;
+      // float base = glm::length(intersectionInObjectFrame);
+      // float hyp = base / std::cos(halfConeAngle);
+      // glm::vec3 coneAxisTowardsIntersection =
+      //     glm::normalize(glm::vec3(0, intersectionInObjectFrame.y, 0)) * hyp;
+      // glm::vec3 normalInObjectFrame = glm::normalize(
+      //     intersectionInObjectFrame - coneAxisTowardsIntersection);
 
       // if (glm::dot(intersection_point-coneOrigin,coneAxis) > 0){
-      glm::vec3 normal = glm::normalize(intersection_point - coneOrigin);
-      float color_vector = glm::dot(-rayDirection, normal);
+      // glm::vec3 normal = glm::normalize(intersectionInObjectFrame);
+      float color_vector = glm::dot(-rayDirection, -normal);
       image[i] = 255 * color_vector;
     }
   }
