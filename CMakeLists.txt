@@ -31,29 +31,32 @@ include_directories(include ${GLM_INCLUDE_DIRS})
 # Create executable
 # add_executable(${PROJECT_NAME} ${SOURCES})
 add_executable(render_circle
-    src/circle.cpp
-    main/circle_render_main.cpp)
+    circle.cpp
+    circle_render_main.cpp)
 
 add_executable(render_checker_board
-    src/checker_board.cpp
-    main/checker_board_main.cpp)
+    checker_board.cpp
+    checker_board_main.cpp)
 
 add_executable(render_radial_checker_board
-    src/radial_checker_board.cpp
-    main/radial_checker_board_main.cpp)
+    radial_checker_board.cpp
+    radial_checker_board_main.cpp)
 
 add_executable(sphere_renderer
-    src/camera_matrix.cpp
-    main/sphere_render_main.cpp)
+    camera_matrix.cpp
+    sphere_render_main.cpp)
 
 add_executable(test_render
-    main/image_render_main.cpp
-    src/camera_matrix.cpp)
+    image_render_main.cpp
+    camera_matrix.cpp)
 
 add_executable(cone_render
-    main/cone_render_main.cpp
-    src/camera_matrix.cpp)
+    cone_render_main.cpp
+    camera_matrix.cpp)
 
+target_link_libraries(render_circle PRIVATE glm::glm)
+target_link_libraries(render_checker_board PRIVATE glm::glm)
+target_link_libraries(render_radial_checker_board PRIVATE glm::glm)
 target_link_libraries(sphere_renderer PRIVATE glm::glm)
 target_link_libraries(test_render PRIVATE glm::glm)
 target_link_libraries(cone_render PRIVATE glm::glm)
