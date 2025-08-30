@@ -1,9 +1,9 @@
 #include <iostream>
+
+#include "common.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/string_cast.hpp>
-#include <vector>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
@@ -19,33 +19,40 @@ std::ostream &operator<<(std::ostream &os, const glm::mat<C, R, T, P> &matrix) {
   return os;
 }
 
-bool IntersectRaySphere(const glm::vec3 &rayOrigin, const glm::vec3 &rayDir,
-                        const glm::vec3 &sphereCenter, float sphereRadius,
-                        float &t) {
-  glm::vec3 L = rayOrigin - sphereCenter;
+bool IntersectRayCone(const glm::vec3 rayOrigin, glm::vec3 rayDirection,
+                      const glm::vec3 sphereCenter, const float sphereRadius,
+                      float &t) {
+  const glm::vec3 L = rayOrigin - sphereCenter;
 
-  float a = glm::dot(rayDir, rayDir);  // should be 1 if rayDir normalized
-  float b = 2.0f * glm::dot(rayDir, L);
-  float c = glm::dot(L, L) - sphereRadius * sphereRadius;
+  rayDirection = glm::normalize(rayDirection);
 
-  float discriminant = b * b - 4.0f * a * c;
+  const float a = glm::dot(rayDirection, rayDirection);
+  const float b = 2.0f * glm::dot(rayDirection, L);
+  const float c = glm::dot(L, L) - (sphereRadius * sphereRadius);
 
-  if (discriminant < 0.0f) return false;  // no intersection
+  // Calculate Determinant
+  const float delta = (b * b) - 4 * a * c;
 
-  float sqrtDiscriminant = glm::sqrt(discriminant);
-  float t1 = (-b - sqrtDiscriminant) / (2.0f * a);
-  float t2 = (-b + sqrtDiscriminant) / (2.0f * a);
+  if (delta < 0.f) return false;
 
-  t = std::min(t1, t2);
-  if (t < 0.0f) t = std::max(t1, t2);  // try the other one if first is behind
-  if (t < 0.0f) return false;          // both behind the ray
+  const float t0 = (-b + std::sqrt(delta)) / (2 * a);
+  const float t1 = (-b - std::sqrt(delta)) / (2 * a);
 
-  return true;
+  if (t0 < 0.f && t1 < 0.f) return false;
+  if (t0 < 0.f && t1 > 0.f) {
+    t = t1;
+    return true;
+  }
+  if (t0 > 0.f && t1 < 0.f) {
+    t = t0;
+    return true;
+  }
+  if (t0 > 0.f && t1 > 0.f) {
+    t = std::min(t0, t1);
+    return true;
+  }
+  return false;
 }
-
-glm::mat3 ComputeCameraMatrix(const float verticalFOVDegrees,
-                              const float imageWIDTH, const float imageHEIGHT);
-
 int main() {
   // Create Image
   constexpr int WIDTH = 1280;
@@ -65,7 +72,7 @@ int main() {
     glm::vec3 ray_direction = -glm::normalize(glm::inverse(KK) * pixel_h);
     float t;
     bool is_intersecting =
-        IntersectRaySphere(ray_origin, ray_direction, obj_origin, radius, t);
+        IntersectRayCone(ray_origin, ray_direction, obj_origin, radius, t);
 
     if (is_intersecting) {
       glm::vec3 intersection_point = ray_origin + ray_direction * t;
@@ -78,8 +85,7 @@ int main() {
     // }
     // std::cout << glm::to_string(ray_direction) << std::endl;
   }
-
-  stbi_write_png("output.png", WIDTH, HEIGHT, comp, image.data(), WIDTH * 1);
-  std::cout << KK;
+  stbi_write_png("output_test.png", WIDTH, HEIGHT, comp, image.data(),
+                 WIDTH * 1);
   return 0;
 }

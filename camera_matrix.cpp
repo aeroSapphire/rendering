@@ -1,5 +1,6 @@
-#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+#include "common.hpp"
 
 glm::mat3 ComputeCameraMatrix(const float verticalFOVDegrees,
                               const float imageWidth, const float imageHeight) {
